@@ -34,12 +34,12 @@
 			// Settings.
 				var settings = {
 
-					// Images (in the format of 'url': 'alignment').
-						images: {
-							'images/nasa.jpg': 'center',
-							'images/guy.jpg': 'center',
-							'images/computer.jpg': 'center'
-						},
+					// Images
+						images: [
+							'images/nasa',
+							'images/guy',
+							'images/computer'
+						],
 
 					// Delay.
 						delay: 6000
@@ -48,124 +48,67 @@
 
 			// Vars.
 				var	pos = 0, lastPos = 0,
-					$wrapper, $bgs = [], $bg,
-					k, v;
+					$wrapper, $bgs = [];
 
 			// Create BG wrapper, BGs.
 				$wrapper = document.createElement('div');
-					$wrapper.id = 'bg';
-					$body.appendChild($wrapper);
+				$wrapper.id = 'bg';
+				$body.appendChild($wrapper);
 
-				for (k in settings.images) {
+      function checkWebPSupport(callback) {
+        var webp = new Image();
+        webp.onload = webp.onerror = function() {
+          callback(webp.height === 2);
+        };
+        webp.src = "data:image/webp;base64,UklGRiIAAABXRUJQVlA4WAoAAAAQAAAAAAABAAEAAQAAQUxQSDIAAAABAAEADwA";
+      };
 
-					// Create BG.
-						$bg = document.createElement('div');
-							$bg.style.backgroundImage = 'url("' + k + '")';
-							$bg.style.backgroundPosition = settings.images[k];
-							$wrapper.appendChild($bg);
+// Load images based on WebP support
+    checkWebPSupport(function(supportsWebP) {
+      settings.images.forEach(function(imageBase) {
+        var imageSrc = supportsWebP ? imageBase + '.webp' : imageBase + '.jpg';
+        createBackground(imageSrc);
+      });
 
-					// Add it to array.
-						$bgs.push($bg);
+      // Start the slideshow only after images are loaded.
+      if ($bgs.length > 1 && canUse('transition')) {
+        setInterval(function() {
+          lastPos = pos;
+          pos++;
 
-				}
+          // Wrap to beginning if necessary.
+          if (pos >= $bgs.length) pos = 0;
 
-			// Main loop.
-				$bgs[pos].classList.add('visible');
-				$bgs[pos].classList.add('top');
+          // Swap top images.
+          $bgs[lastPos].classList.remove('top');
+          $bgs[pos].classList.add('visible', 'top');
 
-				// Bail if we only have a single BG or the client doesn't support transitions.
-					if ($bgs.length == 1
-					||	!canUse('transition'))
-						return;
+          // Hide last image after a short delay.
+          setTimeout(function() {
+            $bgs[lastPos].classList.remove('visible');
+          }, settings.delay / 2);
 
-				window.setInterval(function() {
+        }, settings.delay);
+      }
+    });
 
-					lastPos = pos;
-					pos++;
 
-					// Wrap to beginning if necessary.
-						if (pos >= $bgs.length)
-							pos = 0;
+    function createBackground(src) {
+      var $bg = document.createElement('div');
+      $bg.style.backgroundImage = 'url("' + src + '")';
+      $bg.style.backgroundPosition = 'center';  
+      $bg.style.backgroundSize = 'cover';         
+      $bg.style.backgroundRepeat = 'no-repeat';
+      $wrapper.appendChild($bg);
 
-					// Swap top images.
-						$bgs[lastPos].classList.remove('top');
-						$bgs[pos].classList.add('visible');
-						$bgs[pos].classList.add('top');
+      // Add it to array.
+      $bgs.push($bg);
 
-					// Hide last image after a short delay.
-						window.setTimeout(function() {
-							$bgs[lastPos].classList.remove('visible');
-						}, settings.delay / 2);
+      // Initialize first background.
+      if ($bgs.length === 1) {
+        $bgs[0].classList.add('visible', 'top');
+      }
+    }
 
-				}, settings.delay);
-
-		})();
-
-	// Signup Form.
-		(function() {
-
-			// Vars.
-				var $form = document.querySelectorAll('#signup-form')[0],
-					$submit = document.querySelectorAll('#signup-form input[type="submit"]')[0],
-					$message;
-
-			// Bail if addEventListener isn't supported.
-				if (!('addEventListener' in $form))
-					return;
-
-			// Message.
-				$message = document.createElement('span');
-					$message.classList.add('message');
-					$form.appendChild($message);
-
-				$message._show = function(type, text) {
-
-					$message.innerHTML = text;
-					$message.classList.add(type);
-					$message.classList.add('visible');
-
-					window.setTimeout(function() {
-						$message._hide();
-					}, 3000);
-
-				};
-
-				$message._hide = function() {
-					$message.classList.remove('visible');
-				};
-
-			// Events.
-			// Note: If you're *not* using AJAX, get rid of this event listener.
-				$form.addEventListener('submit', function(event) {
-
-					event.stopPropagation();
-					event.preventDefault();
-
-					// Hide message.
-						$message._hide();
-
-					// Disable submit.
-						$submit.disabled = true;
-
-					// Process form.
-					// Note: Doesn't actually do anything yet (other than report back with a "thank you"),
-					// but there's enough here to piece together a working AJAX submission call that does.
-						window.setTimeout(function() {
-
-							// Reset form.
-								$form.reset();
-
-							// Enable submit.
-								$submit.disabled = false;
-
-							// Show message.
-								$message._show('success', 'Thank you!');
-								//$message._show('failure', 'Something went wrong. Please try again.');
-
-						}, 750);
-
-				});
-
-		})();
-
+  })();
 })();
